@@ -1,4 +1,5 @@
-#include <iostream>
+#include <SFML/Graphics.hpp>
+#include <stdio.h>
 #include <cstdlib>
 #include <chrono>
 #include <thread>
@@ -6,38 +7,49 @@ using namespace std;
 
 #define WIDTH 64
 #define HEIGHT 32
+#define SCALE 50
+#define FPS 1.0f
 
-bool screen[HEIGHT][WIDTH];
+#define sleep_ms(t) this_thread::sleep_for(chrono::milliseconds(t))
 
-void drawLine() {
-    cout << '+';
-    for(int j = 0; j < WIDTH; j++) cout << '-';
-    cout << '+' << endl;
-}
+bool screen[32][64];
 
-void drawScreen() {
-    drawLine();
-    for(int i = 0; i < HEIGHT; i++) {
-        cout << '|';
-        for(int j = 0; j < WIDTH; j++) {
-            if(screen[i][j]) cout << "█";
-            else cout << ' ';
-        }
-        cout << '|' << endl;
-    }
-    drawLine();
-}
+int main()
+{
+    sf::RenderWindow window(sf::VideoMode(64 * SCALE, 32 * SCALE), "SFML works!");
+    window.setFramerateLimit(FPS);
 
-int main() {
+    
     int x = 0, y = 0;
-    while(x < WIDTH && y < HEIGHT) {
-        system("clear");
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+        
         screen[y][x] = true;
-        drawScreen();
+
+        window.clear();
+        for(int i = 0; i < 32; i++) {
+            for(int j = 0; j < 64; j++) {
+                if(screen[i][j]) {
+                    sf::RectangleShape rectangle(sf::Vector2f(SCALE, SCALE));
+                    rectangle.setPosition(j * SCALE, i * SCALE);
+                    window.draw(rectangle);
+                }
+            }
+        }
+
+        window.display();
         screen[y][x] = false;
-        x++;
-        y++;
-        this_thread::sleep_for(chrono::milliseconds(50));
+        x++, y++;
+        x %= 64;
+        y %= 32;
+        
     }
+
     return 0;
 }

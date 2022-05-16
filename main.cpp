@@ -78,7 +78,7 @@ string initialize(int argc, char **argv)
 {
     pc = 0x200;
     I = 0;
-    sp = 0;
+    sp = -1;
     for (int i = 0; i < 80; i++)
         memory[i] = chip8_fontset[i];
     drawFlag = false;
@@ -97,13 +97,6 @@ string initialize(int argc, char **argv)
     return ret;
 }
 
-void clearScreen()
-{
-    for (int i = 0; i < HEIGHT; i++)
-        for (int j = 0; j < WIDTH; j++)
-            screen[i][j] = false;
-}
-
 void emulateCycle()
 {
     unsigned short instr = (memory[pc] << 8) | memory[pc + 1];
@@ -116,7 +109,7 @@ void emulateCycle()
 
     drawFlag = (pref == 0x0000) || (pref == 0xD000);
 
-    if (instr != 0x1228)
+    if (DEBUG && instr != 0x1228)
     {
         printf("Running instruction: %04x\n", instr);
     }
@@ -127,7 +120,9 @@ void emulateCycle()
     {
         if (n == 0)
         {
-            clearScreen();
+            for (int i = 0; i < HEIGHT; i++)
+                for (int j = 0; j < WIDTH; j++)
+                    screen[i][j] = false;
             pc += 2;
         }
         else if (n == 0xE)
@@ -147,6 +142,37 @@ void emulateCycle()
         break;
     }
 
+    case 0x2000:
+    {
+        stk[++sp] = pc;
+        pc = nnn;
+        break;
+    }
+
+    case 0x3000:
+    {
+        if (V[x >> 8] == kk)
+            pc += 2;
+        pc += 2;
+        break;
+    }
+
+    case 0x4000:
+    {
+        if (V[x >> 8] != kk)
+            pc += 2;
+        pc += 2;
+        break;
+    }
+
+    case 0x5000:
+    {
+        if (V[x >> 8] == V[y >> 4])
+            pc += 2;
+        pc += 2;
+        break;
+    }
+
     case 0x6000:
     {
         V[x >> 8] = (unsigned char)kk;
@@ -161,10 +187,24 @@ void emulateCycle()
         break;
     }
 
+    case 0x9000:
+    {
+        if (V[x >> 8] != V[y >> 4])
+            pc += 2;
+        pc += 2;
+        break;
+    }
+
     case 0xA000:
     {
         I = nnn;
         pc += 2;
+        break;
+    }
+
+    case 0xB000:
+    {
+        pc = nnn + V[0];
         break;
     }
 
